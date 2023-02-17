@@ -25,4 +25,3 @@ def run(protocol: protocol_api.ProtocolContext):
         p300.transfer(100, reservoir['A2'], row[0], mix_after=(3, 50))
         p300.transfer(100, row[:11], row[1:], mix_after= (3, 50))
 
-    p300.transfer(100, row[:11], row[1:], mix_after=(3, 50))
