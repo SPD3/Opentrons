@@ -2,7 +2,7 @@ from opentrons import protocol_api
 
 metadata = {
     'apiLevel': '2.13',
-    'protocolName': 'Eject Tip',
+    'protocolName': 'Eject Tip P300',
     'description': '''This protocol is only supposed to eject the tip from the 
                        end of a P300 gen 1 pipette.''',
     'author': 'Sean Doyle'
