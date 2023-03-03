@@ -41,7 +41,8 @@ class ReverseTipPickUpDirection(labware.Labware):
 
         self.tips_order.reverse()
         self.current_tip_index = 0
-        
+    
+    """Does not care about num_tips or starting_tip"""
     def next_tip(
         self, num_tips: int = 1, starting_tip: Optional[Well] = None
     ) -> Optional[Well]:
@@ -64,7 +65,6 @@ class EightToSingleChannelPipette(InstrumentContext):
         """The number of channels on the pipette."""
         return 1
 
-    
 
 def get_pipette(protocol : protocol_api.ProtocolContext, name: str, mount:str, tip_racks: List[Labware]) -> InstrumentContext:
     return protocol.load_instrument(
