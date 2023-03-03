@@ -9,12 +9,12 @@ class MyLocation (types.Location):
         print("hi")
 
     def __add__(self, o):
-        point = types.Point(self._point.x + o._point.x, self._point.y + o._point.y)
+        point = types.Point(self._point.x + o._point.x, self._point.y + o._point.y, self._point.z)
         location = types.Location(point, self._labware)
         return MyLocation(location)
     
     def __sub__(self, o):
-        point = types.Point(self._point.x - o._point.x, self._point.y - o._point.y)
+        point = types.Point(self._point.x - o._point.x, self._point.y - o._point.y, self._point.z)
         location = types.Location(point, self._labware)
         return MyLocation(location)
 
@@ -29,7 +29,8 @@ metadata = {
 
 
 def run(protocol: protocol_api.ProtocolContext):
-    tips = protocol.load_labware('opentrons_96_tiprack_20ul', 8)
+    tips = protocol.load_labware('opentrons_96_tiprack_20ul', 11)
     p10 = protocol.load_instrument('p10_multi', 'right', tip_racks=[tips])
-    p10.pick_up_tip(MyLocation(tips['A1'].center()) + (MyLocation(tips['A1'].center()) - MyLocation(tips['A7'].center())))
+    #p10.pick_up_tip(MyLocation(tips['A1'].center()) + (MyLocation(tips['A1'].center()) - MyLocation(tips['H1'])))
+    p10.pick_up_tip(tips['H1']);
     p10.drop_tip()
