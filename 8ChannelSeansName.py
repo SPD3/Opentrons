@@ -1,5 +1,4 @@
 import copy
-import types
 from typing import List, Optional, Union
 from opentrons import protocol_api
 from opentrons.types import Location
@@ -8,36 +7,23 @@ from opentrons.protocol_api.instrument_context import InstrumentContext
 from opentrons.protocol_api.labware import Labware
 from opentrons.protocol_api import labware
 
-from opentrons.protocol_api.core.instrument import AbstractInstrument
-from opentrons.protocol_api.core.well import AbstractWellCore
-from opentrons.protocol_api.protocol_context import ProtocolContext
-from opentrons.broker import Broker
-from opentrons.protocols.api_support.types import APIVersion
 from opentrons.protocol_api.labware import Well
-
-
-metadata = {
-    'apiLevel': '2.8',
-    'protocolName': 'CCL ARTBot (8 to 1 channel)',
-    'author': 'Tim Dobbs and Counter Culture Labs',
-    'source': 'ARTBot Protocol Builder',
-    'description': """Protocol for drawing bio-art.
-                      Built from a template and the designer
-                      at bioartbot.org"""
-    }
-
-TIP_RACK_LOCATION = 7
 
 class ReverseTipPickUpDirection(labware.Labware):
     def __init__(self, labware: labware.Labware) -> None:
-        super().__init__(labware)
+        super().__init__(implementation = labware._implementation, 
+                         api_level = labware._api_version)
         
         labware_cpy = copy.deepcopy(labware)
         next_tip = labware_cpy.next_tip()
         self.tips_order = []
+        i = 0
         while(next_tip):
             self.tips_order.append(next_tip)
+            labware_cpy.use_tips(next_tip)
             next_tip = labware_cpy.next_tip()
+            
+            i += 1
 
         self.tips_order.reverse()
         self.current_tip_index = 0
@@ -53,22 +39,31 @@ class ReverseTipPickUpDirection(labware.Labware):
         return current_tip
 
 class EightToSingleChannelPipette(InstrumentContext):
-    def __init__(self, instrument_context: InstrumentContext) -> None:
-        super().__init__(instrument_context)
-        self.tip_locations = self.__next_tip_location_string_generator()
+    def __init__(self, protocol : protocol_api.ProtocolContext, instrument_context: InstrumentContext) -> None:
+        super().__init__(implementation=instrument_context._implementation, 
+                         ctx=instrument_context._ctx, 
+                         broker=instrument_context._broker, 
+                         at_version=instrument_context._api_version, 
+                         tip_racks=instrument_context.tip_racks, 
+                         trash=instrument_context._trash)
         for i, tip_rack in enumerate(self.tip_racks):
             self.tip_racks[i] = ReverseTipPickUpDirection(tip_rack)
 
     @property  # type: ignore
-    @super.requires_version(2, 0)
     def channels(self) -> int:
         """The number of channels on the pipette."""
         return 1
 
+    def pick_up_tip(self, location: Optional[Union[Location, labware.Well]] = None, presses: Optional[int] = None, increment: Optional[float] = None, prep_after: Optional[bool] = None) -> InstrumentContext:
+        """Defaults presses to 1, as that tends to work best for the 8-1 channel"""
+        if not presses:
+            presses = 1
+        return super().pick_up_tip(location, presses, increment, prep_after)
 
 def get_pipette(protocol : protocol_api.ProtocolContext, name: str, mount:str, tip_racks: List[Labware]) -> InstrumentContext:
     if name == "p10_multi":
         return EightToSingleChannelPipette(
+            protocol,
             protocol.load_instrument(
                 name,
                 mount=mount,
@@ -80,6 +75,18 @@ def get_pipette(protocol : protocol_api.ProtocolContext, name: str, mount:str, t
             mount=mount,
             tip_racks= tip_racks
     )
+
+TIP_RACK_LOCATION = 10
+
+metadata = {
+    'apiLevel': '2.8',
+    'protocolName': 'Seans name 8 channel',
+    'author': 'Tim Dobbs and Counter Culture Labs',
+    'source': 'ARTBot Protocol Builder',
+    'description': """Protocol for drawing bio-art.
+                      Built from a template and the designer
+                      at bioartbot.org"""
+    }
 
 def distribute_to_agar(pipette, vol, source, destination, disposal_vol):
     max_volume = pipette.max_volume
@@ -106,7 +113,9 @@ def distribute_to_agar(pipette, vol, source, destination, disposal_vol):
                 asp_vol = remaining_vol + disposal_vol - pipette.current_volume
 
             pipette.aspirate(asp_vol, source)
-            if vol < 0.3: pipette.touch_tip(source) #avoid blotches from liquid stuck to the outside of the tip
+            pipette.touch_tip(source, v_offset= -15)
+            # if vol < 0.3: 
+            #     pipette.touch_tip(source) #avoid blotches from liquid stuck to the outside of the tip
 
         pipette.move_to(well)
         pipette.dispense(vol)
@@ -123,11 +132,11 @@ def run(protocol: protocol_api.ProtocolContext):
     palette = protocol.load_labware('cryo_35_tuberack_2000ul', 11)
 
     # set the pipette we will be using
-    pipette = get_pipette('p20_single_gen2', 'left', [tiprack])
+    pipette = get_pipette(protocol, 'p10_multi', 'right', tip_racks=[tiprack])
 
     # load all of the 
     pixels_by_color_by_artpiece = {'4': {'seans-name#1': [(-0.5939696961966998, 0.25455844122715715, 0.99), (-0.537401153701776, 0.25455844122715715, 0.99), (-0.4808326112068523, 0.25455844122715715, 0.99), (-0.42426406871192845, 0.25455844122715715, 0.99), (-0.42426406871192845, 0.3111269837220809, 0.99), (-0.42426406871192845, 0.36769552621700474, 0.99), (-0.537401153701776, 0.42426406871192857, 0.99), (-0.5939696961966998, 0.42426406871192857, 0.99), (-0.4808326112068523, 0.42426406871192857, 0.99), (-0.42426406871192845, 0.42426406871192857, 0.99), (-0.5939696961966998, 0.48083261120685233, 0.99), (-0.5939696961966998, 0.5374011537017761, 0.99), (-0.5939696961966998, 0.5939696961967, 0.99), (-0.537401153701776, 0.5939696961967, 0.99), (-0.4808326112068523, 0.5939696961967, 0.99), (-0.42426406871192845, 0.5939696961967, 0.99), (-0.25455844122715704, 0.5939696961967, 0.99), (-0.25455844122715704, 0.25455844122715715, 0.99), (-0.19798989873223327, 0.25455844122715715, 0.99), (-0.1414213562373095, 0.25455844122715715, 0.99), (-0.08485281374238562, 0.25455844122715715, 0.99), (-0.25455844122715704, 0.3111269837220809, 0.99), (-0.25455844122715704, 0.36769552621700474, 0.99), (0.0848528137423858, 0.36769552621700474, 0.99), (0.0848528137423858, 0.3111269837220809, 0.99), (-0.25455844122715704, 0.42426406871192857, 0.99), (-0.19798989873223327, 0.42426406871192857, 0.99), (-0.1414213562373095, 0.42426406871192857, 0.99), (-0.08485281374238562, 0.42426406871192857, 0.99), (-0.25455844122715704, 0.48083261120685233, 0.99), (-0.25455844122715704, 0.5374011537017761, 0.99), (-0.19798989873223327, 0.5939696961967, 0.99), (-0.1414213562373095, 0.5939696961967, 0.99), (-0.08485281374238562, 0.5939696961967, 0.99), (0.0848528137423858, 0.25455844122715715, 0.99), (0.3111269837220809, 0.25455844122715715, 0.99), (0.3111269837220809, 0.3111269837220809, 0.99), (0.48083261120685233, 0.3111269837220809, 0.99), (0.19798989873223335, 0.36769552621700474, 0.99), (0.1414213562373095, 0.42426406871192857, 0.99), (0.3111269837220809, 0.36769552621700474, 0.99), (0.48083261120685233, 0.36769552621700474, 0.99), (0.2545584412271572, 0.42426406871192857, 0.99), (0.2545584412271572, 0.48083261120685233, 0.99), (0.1414213562373095, 0.48083261120685233, 0.99), (0.48083261120685233, 0.42426406871192857, 0.99), (0.48083261120685233, 0.48083261120685233, 0.99), (0.48083261120685233, 0.5374011537017761, 0.99), (0.19798989873223335, 0.5374011537017761, 0.99), (0.19798989873223335, 0.5939696961967, 0.99), (0.48083261120685233, 0.5939696961967, 0.99), (0.48083261120685233, 0.25455844122715715, 0.99), (0.6505382386916237, 0.25455844122715715, 0.99), (0.6505382386916237, 0.3111269837220809, 0.99), (0.7071067811865477, 0.25455844122715715, 0.99), (0.7071067811865477, 0.3111269837220809, 0.99), (0.7071067811865477, 0.36769552621700474, 0.99), (0.6505382386916237, 0.36769552621700474, 0.99), (0.5939696961966999, 0.36769552621700474, 0.99), (0.5939696961966999, 0.42426406871192857, 0.99), (0.5939696961966999, 0.48083261120685233, 0.99), (0.5374011537017762, 0.48083261120685233, 0.99), (0.7071067811865477, 0.42426406871192857, 0.99), (0.7071067811865477, 0.48083261120685233, 0.99), (0.7071067811865477, 0.5374011537017761, 0.99), (0.5374011537017762, 0.5374011537017761, 0.99), (0.5374011537017762, 0.5939696961967, 0.99), (0.7071067811865477, 0.5939696961967, 0.99)]}}
-    canvas_locations = {'seans-name#1': '4'}
+    canvas_locations = {'seans-name#1': '5'}
     color_map = {'6': 'red_FC', '7': 'blue_FC', '8': 'green_FC', '10': 'purple_FC', '9': 'orange_FC', '12': 'yellow_FC', '1': 'pink', '2': 'blue', '3': 'teal', '4': 'peach', '5': 'fluorescent yellow'}
 
     # a function that gets us the next available well in a plate
