@@ -55,6 +55,7 @@ class EightToSingleChannelPipette(InstrumentContext):
         return 1
 
     def pick_up_tip(self, location: Optional[Union[Location, labware.Well]] = None, presses: Optional[int] = None, increment: Optional[float] = None, prep_after: Optional[bool] = None) -> InstrumentContext:
+        """Defaults presses to 1, as that tends to work best for the 8-1 channel"""
         if not presses:
             presses = 1
         return super().pick_up_tip(location, presses, increment, prep_after)
@@ -75,6 +76,8 @@ def get_pipette(protocol : protocol_api.ProtocolContext, name: str, mount:str, t
             tip_racks= tip_racks
     )
 
+TIP_RACK_LOCATION = 10
+
 metadata = {
     'apiLevel': '2.8',
     'protocolName': 'Seans name 8 channel',
@@ -84,8 +87,6 @@ metadata = {
                       Built from a template and the designer
                       at bioartbot.org"""
     }
-
-TIP_RACK_LOCATION = 10
 
 def distribute_to_agar(pipette, vol, source, destination, disposal_vol):
     max_volume = pipette.max_volume
