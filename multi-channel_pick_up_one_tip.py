@@ -29,8 +29,9 @@ metadata = {
 
 
 def run(protocol: protocol_api.ProtocolContext):
-    tips = protocol.load_labware('opentrons_96_tiprack_20ul', 11)
+    tips = protocol.load_labware('opentrons_96_tiprack_20ul', 10)
     p10 = protocol.load_instrument('p10_multi', 'right', tip_racks=[tips])
     #p10.pick_up_tip(MyLocation(tips['A1'].center()) + (MyLocation(tips['A1'].center()) - MyLocation(tips['H1'])))
-    p10.pick_up_tip(tips['H1']);
-    p10.drop_tip()
+    for i in range(1,13):
+        p10.pick_up_tip(tips['H' + str(i)], presses=1);
+        p10.drop_tip()
