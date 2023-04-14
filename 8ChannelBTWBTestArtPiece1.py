@@ -81,7 +81,7 @@ def get_pipette(protocol : protocol_api.ProtocolContext, name: str, mount:str, t
 
 metadata = {
     'apiLevel': '2.8',
-    'protocolName': ('BTWB Test Art Piece: Bullseye, DA: 0.4'),
+    'protocolName': ('BTWB Test Art Piece: Bullseye, DA: 0.1'),
     'author': 'Sean Doyle and BTWB Lab',
     'source': 'ARTBot Protocol Builder',
     'description': """Protocol for drawing bio-art.
