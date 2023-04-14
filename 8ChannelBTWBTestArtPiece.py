@@ -11,17 +11,19 @@ from opentrons.protocol_api.labware import Well
 
 class ReverseTipPickUpDirection(labware.Labware):
     def __init__(self, labware: labware.Labware) -> None:
-        super().__init__(implementation = labware._implementation, 
-                         api_level = labware._api_version)
+        super().__init__(core= labware._core,
+            api_version= labware._api_version,
+            protocol_core= labware._protocol_core,
+            core_map= labware._core_map)
         
-        labware_cpy = copy.deepcopy(labware)
-        next_tip = labware_cpy.next_tip()
+        labware_cpy = self
+        next_tip = super().next_tip()
         self.tips_order = []
         i = 0
         while(next_tip):
             self.tips_order.append(next_tip)
             labware_cpy.use_tips(next_tip)
-            next_tip = labware_cpy.next_tip()
+            next_tip = super().next_tip()
             
             i += 1
 
@@ -40,12 +42,13 @@ class ReverseTipPickUpDirection(labware.Labware):
 
 class EightToSingleChannelPipette(InstrumentContext):
     def __init__(self, protocol : protocol_api.ProtocolContext, instrument_context: InstrumentContext) -> None:
-        super().__init__(implementation=instrument_context._implementation, 
-                         ctx=instrument_context._ctx, 
+        super().__init__(core=instrument_context._core, 
+                         protocol_core = instrument_context._protocol_core,
                          broker=instrument_context._broker, 
-                         at_version=instrument_context._api_version, 
+                         api_version=instrument_context._api_version, 
                          tip_racks=instrument_context.tip_racks, 
-                         trash=instrument_context._trash)
+                         trash=instrument_context.trash_container,
+                         requested_as= instrument_context.requested_as)
         for i, tip_rack in enumerate(self.tip_racks):
             self.tip_racks[i] = ReverseTipPickUpDirection(tip_rack)
 
