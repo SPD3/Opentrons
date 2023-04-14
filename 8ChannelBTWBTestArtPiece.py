@@ -79,9 +79,11 @@ def get_pipette(protocol : protocol_api.ProtocolContext, name: str, mount:str, t
             tip_racks= tip_racks
     )
 
+DISPENSE_AMOUNT = 0.2
+
 metadata = {
     'apiLevel': '2.8',
-    'protocolName': 'BTWB Test Art Piece',
+    'protocolName': 'BTWB Test Art Piece DA: ' + str(DISPENSE_AMOUNT),
     'author': 'Sean Doyle and BTWB Lab',
     'source': 'ARTBot Protocol Builder',
     'description': """Protocol for drawing bio-art.
@@ -179,4 +181,4 @@ def run(protocol: protocol_api.ProtocolContext):
                 ]
 
     for color in pixels_by_color:
-        distribute_to_agar(pipette, 0.4, palette_colors[color], pixels_by_color[color], disposal_vol=2)
+        distribute_to_agar(pipette, DISPENSE_AMOUNT, palette_colors[color], pixels_by_color[color], disposal_vol=2)
